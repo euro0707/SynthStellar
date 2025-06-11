@@ -32,6 +32,9 @@ function preload() {
 }
 
 // Create function: runs once after preload, sets up the game
+let notesGroup;
+let spawnTimer;
+
 function create() {
     console.log("Game created!");
 
@@ -71,10 +74,36 @@ function create() {
         fontSize: '16px',
         fill: '#ff0000'
     }).setOrigin(1, 0.5);
+
+    // --- Notes Setup ---
+    notesGroup = this.physics.add.group();
+
+    // Timer to spawn notes periodically
+    spawnTimer = this.time.addEvent({
+        delay: 1000, // Spawn a note every 1000ms (1 second)
+        callback: () => spawnNote(this, playfieldStartX, laneWidth, numLanes),
+        callbackScope: this,
+        loop: true
+    });
 }
 
 // Update function: runs every frame, game loop
 function update() {
-    // Game logic that needs to run continuously
-    // Example: player.x += 1;
+    // Remove notes that have gone off-screen
+    notesGroup.getChildren().forEach(note => {
+        if (note.y > this.sys.game.config.height + 50) {
+            note.destroy();
+        }
+    });
+}
+
+function spawnNote(scene, playfieldStartX, laneWidth, numLanes) {
+    const lane = Phaser.Math.Between(0, numLanes - 1);
+    const x = playfieldStartX + (lane * laneWidth) + (laneWidth / 2);
+    const y = -50; // Start above the screen
+
+    const note = scene.add.rectangle(x, y, laneWidth - 10, 30, 0x00ff00); // Green note
+    notesGroup.add(note); // Add to the physics group
+
+    note.body.setVelocityY(200); // Set falling speed
 }
