@@ -35,6 +35,17 @@ function preload() {
 let notesGroup;
 let spawnTimer;
 let keys; // To hold keyboard input objects
+let score = 0;
+let scoreText;
+let judgmentLineY; // To be accessible in update()
+
+// Judgment windows (in pixels from the judgment line)
+const judgmentWindows = {
+    PERFECT: 20,
+    GREAT: 40,
+    GOOD: 60,
+    MISS: 80 // Notes beyond this are considered a miss
+};
 const laneKeys = ['D', 'F', 'J', 'K']; // Define keys for lanes
 
 function create() {
@@ -47,7 +58,7 @@ function create() {
     const laneWidth = 100;
     const playfieldWidth = numLanes * laneWidth;
     const playfieldStartX = (gameWidth - playfieldWidth) / 2;
-    const judgmentLineY = gameHeight - 100;
+        judgmentLineY = gameHeight - 100;
 
     // --- Draw Playfield ---
     const graphics = this.add.graphics();
@@ -88,6 +99,13 @@ function create() {
         loop: true
     });
 
+    // --- Score Display ---
+    scoreText = this.add.text(gameWidth - 16, 16, 'Score: 0', {
+        fontSize: '24px',
+        fill: '#fff',
+        align: 'right'
+    }).setOrigin(1, 0);
+
     // --- Input Setup ---
     keys = this.input.keyboard.addKeys(laneKeys.join(','));
 
@@ -102,10 +120,34 @@ function create() {
 
 // Update function: runs every frame, game loop
 function update() {
-    // Remove notes that have gone off-screen
+    // Check for missed notes
     notesGroup.getChildren().forEach(note => {
-        if (note.y > this.sys.game.config.height + 50) {
+        if (note.y > judgmentLineY + judgmentWindows.MISS) {
+            console.log("Miss!");
+            displayJudgment(this, 'MISS', '#888888'); // Display MISS feedback
             note.destroy();
+            // Here you would typically reset the combo
+        }
+    });
+}
+
+function displayJudgment(scene, text, color = '#ffffff') {
+    const judgmentText = scene.add.text(scene.sys.game.config.width / 2, scene.sys.game.config.height / 2, text, {
+        fontSize: '48px',
+        fill: color,
+        align: 'center',
+        stroke: '#000000',
+        strokeThickness: 4
+    }).setOrigin(0.5);
+
+    scene.tweens.add({
+        targets: judgmentText,
+        alpha: { from: 1, to: 0 },
+        y: '-=50', // Move up slightly
+        duration: 600,
+        ease: 'Power1',
+        onComplete: () => {
+            judgmentText.destroy();
         }
     });
 }
@@ -122,21 +164,20 @@ function spawnNote(scene, playfieldStartX, laneWidth, numLanes) {
 }
 
 function hitNote(scene, laneIndex, judgmentLineY, playfieldStartX, laneWidth) {
-    const hitWindow = 50; // The vertical range for a successful hit (25px above and below the line)
     const targetX_min = playfieldStartX + (laneIndex * laneWidth);
     const targetX_max = targetX_min + laneWidth;
 
     let closestNote = null;
     let minDistance = Infinity;
 
-    // Find the closest note in the correct lane within the hit window
+    // Find the closest note in the correct lane
     notesGroup.getChildren().forEach(note => {
         const noteX = note.x;
         const noteY = note.y;
-        const distance = Math.abs(noteY - judgmentLineY);
 
-        // Check if the note is in the correct lane and within the hit window
-        if (noteX > targetX_min && noteX < targetX_max && distance < hitWindow) {
+        // Check if the note is in the correct lane and is hittable
+        if (noteX > targetX_min && noteX < targetX_max && Math.abs(noteY - judgmentLineY) < judgmentWindows.MISS) {
+            const distance = Math.abs(noteY - judgmentLineY);
             if (distance < minDistance) {
                 minDistance = distance;
                 closestNote = note;
@@ -144,20 +185,41 @@ function hitNote(scene, laneIndex, judgmentLineY, playfieldStartX, laneWidth) {
         }
     });
 
-    // If a note was found, destroy it and provide feedback
-    if (closestNote) {
-        closestNote.destroy();
-        console.log(`Hit in lane ${laneIndex + 1}!`);
+    // --- Visual Feedback for the key press ---
+    const feedbackRect = scene.add.rectangle(targetX_min + laneWidth / 2, judgmentLineY, laneWidth, 80, 0xffffff, 0.4);
+    scene.tweens.add({
+        targets: feedbackRect,
+        alpha: 0,
+        duration: 150,
+        onComplete: () => { feedbackRect.destroy(); }
+    });
 
-        // Add visual feedback for the hit
-        const feedbackRect = scene.add.rectangle(targetX_min + laneWidth / 2, judgmentLineY, laneWidth, 50, 0xffffff, 0.5);
-        scene.tweens.add({
-            targets: feedbackRect,
-            alpha: 0,
-            duration: 200,
-            onComplete: () => {
-                feedbackRect.destroy();
-            }
-        });
+    // If a hittable note was found, process the hit
+    if (closestNote) {
+        const distance = Math.abs(closestNote.y - judgmentLineY);
+        let judgment = '';
+        let scoreValue = 0;
+        let color = '#ffffff';
+
+        if (distance <= judgmentWindows.PERFECT) {
+            judgment = 'PERFECT';
+            scoreValue = 100;
+            color = '#ffdd00'; // Gold
+        } else if (distance <= judgmentWindows.GREAT) {
+            judgment = 'GREAT';
+            scoreValue = 50;
+            color = '#00ff00'; // Green
+        } else if (distance <= judgmentWindows.GOOD) {
+            judgment = 'GOOD';
+            scoreValue = 20;
+            color = '#00bbff'; // Blue
+        }
+
+        // Destroy the note and update score/UI
+        closestNote.destroy();
+        score += scoreValue;
+        scoreText.setText('Score: ' + score);
+        console.log(`${judgment} in lane ${laneIndex + 1}!`);
+        displayJudgment(scene, judgment, color);
     }
 }
