@@ -20,7 +20,17 @@
     </style>
 </head>
 <body>
+    <audio id="bgm" src="audio/bgm.mp3" preload="auto" style="display:none"></audio>
     <div id="game-container"></div>
     <script src="game.js"></script>
+    <script src="speed.js?v=3"></script>
+    <script>
+        // resume audio after first user interaction
+        document.addEventListener('pointerdown', () => {
+            if (window.startBGM) {
+                window.startBGM();
+            }
+        }, { once: true });
+    </script>
 </body>
 </html>

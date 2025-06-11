@@ -38,6 +38,8 @@ let keys; // To hold keyboard input objects
 let score = 0;
 let scoreText;
 let judgmentLineY; // To be accessible in update()
+let gameState; // 'playing', 'ending', 'finished'
+let gameEndTimer;
 
 // Judgment windows (in pixels from the judgment line)
 const judgmentWindows = {
@@ -50,6 +52,10 @@ const laneKeys = ['D', 'F', 'J', 'K']; // Define keys for lanes
 
 function create() {
     console.log("Game created!");
+    this.input.keyboard.removeAllListeners(); // Clean up listeners from previous game
+
+    gameState = 'playing';
+    score = 0; // Reset score on restart
 
     // --- Game Layout Constants ---
     const gameWidth = this.sys.game.config.width;
@@ -94,7 +100,11 @@ function create() {
     // Timer to spawn notes periodically
     spawnTimer = this.time.addEvent({
         delay: 1000, // Spawn a note every 1000ms (1 second)
-        callback: () => spawnNote(this, playfieldStartX, laneWidth, numLanes),
+        callback: () => {
+            if (gameState === 'playing') { // Only spawn notes if the game is active
+                spawnNote(this, playfieldStartX, laneWidth, numLanes);
+            }
+        },
         callbackScope: this,
         loop: true
     });
@@ -116,19 +126,87 @@ function create() {
             hitNote(this, i, judgmentLineY, playfieldStartX, laneWidth);
         });
     }
+
+    // --- Game End Timer ---
+    // Calls the global endGame function after 30 seconds. No arguments or scope needed.
+    gameEndTimer = this.time.delayedCall(30000, endGame);
+
+    // --- ESC to End Listener ---
+    this.input.keyboard.on('keydown-ESC', () => {
+        if (gameState === 'playing') {
+            console.log("ESC pressed, forcing game end.");
+            endGame(); // Call the global endGame function
+        }
+    });
+
+    // --- Restart Listener ---
+    this.input.keyboard.on('keydown-ENTER', () => {
+        if (gameState === 'finished') { // Only restart if the game is finished
+            this.scene.restart();
+        }
+    });
 }
 
 // Update function: runs every frame, game loop
 function update() {
-    // Check for missed notes
-    notesGroup.getChildren().forEach(note => {
+    if (gameState !== 'playing') {
+        return; // Skip processing when not playing
+    }
+
+    // Process notes that go past the judgment line (misses)
+    // Iterate backwards because we are destroying items from the group, which is safer.
+    const notes = notesGroup.getChildren();
+    for (let i = notes.length - 1; i >= 0; i--) {
+        const note = notes[i];
         if (note.y > judgmentLineY + judgmentWindows.MISS) {
-            console.log("Miss!");
-            displayJudgment(this, 'MISS', '#888888'); // Display MISS feedback
-            note.destroy();
-            // Here you would typically reset the combo
+            // Only show 'MISS' judgment and reset combo during active play
+            if (gameState === 'playing') {
+                console.log("Miss!");
+                displayJudgment(this, 'MISS', '#888888');
+                // Here you would typically reset the combo
+            }
+            note.destroy(); // Destroy the note regardless of game state
         }
-    });
+    }
+}
+
+function endGame() {
+    // Prevent multiple calls
+    if (gameState !== 'playing') return;
+
+    // Stop spawning and schedule timers
+    if (spawnTimer) {
+        spawnTimer.remove();
+        spawnTimer = null;
+    }
+    if (gameEndTimer) {
+        gameEndTimer.remove();
+        gameEndTimer = null;
+    }
+
+    // Destroy all remaining notes immediately
+    notesGroup.clear(true, true);
+
+    // Mark game as finished
+    gameState = 'finished';
+
+    // Display "Game Clear" text
+    const cx = config.width / 2;
+    const cy = config.height / 2;
+    game.scene.keys.default.add.text(cx, cy - 50, 'GAME CLEAR', {
+        fontSize: '64px',
+        fill: '#ffff00',
+        align: 'center',
+        stroke: '#000000',
+        strokeThickness: 6
+    }).setOrigin(0.5);
+
+    // Display restart instruction
+    game.scene.keys.default.add.text(cx, cy + 50, 'Press ENTER to Restart', {
+        fontSize: '24px',
+        fill: '#ffffff',
+        align: 'center'
+    }).setOrigin(0.5);
 }
 
 function displayJudgment(scene, text, color = '#ffffff') {
