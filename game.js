@@ -34,6 +34,8 @@ function preload() {
 // Create function: runs once after preload, sets up the game
 let notesGroup;
 let spawnTimer;
+let keys; // To hold keyboard input objects
+const laneKeys = ['D', 'F', 'J', 'K']; // Define keys for lanes
 
 function create() {
     console.log("Game created!");
@@ -85,6 +87,17 @@ function create() {
         callbackScope: this,
         loop: true
     });
+
+    // --- Input Setup ---
+    keys = this.input.keyboard.addKeys(laneKeys.join(','));
+
+    for (let i = 0; i < laneKeys.length; i++) {
+        const key = keys[laneKeys[i]];
+        key.on('down', () => {
+            // Pass the necessary layout constants to the hitNote function
+            hitNote(this, i, judgmentLineY, playfieldStartX, laneWidth);
+        });
+    }
 }
 
 // Update function: runs every frame, game loop
@@ -106,4 +119,45 @@ function spawnNote(scene, playfieldStartX, laneWidth, numLanes) {
     notesGroup.add(note); // Add to the physics group
 
     note.body.setVelocityY(200); // Set falling speed
+}
+
+function hitNote(scene, laneIndex, judgmentLineY, playfieldStartX, laneWidth) {
+    const hitWindow = 50; // The vertical range for a successful hit (25px above and below the line)
+    const targetX_min = playfieldStartX + (laneIndex * laneWidth);
+    const targetX_max = targetX_min + laneWidth;
+
+    let closestNote = null;
+    let minDistance = Infinity;
+
+    // Find the closest note in the correct lane within the hit window
+    notesGroup.getChildren().forEach(note => {
+        const noteX = note.x;
+        const noteY = note.y;
+        const distance = Math.abs(noteY - judgmentLineY);
+
+        // Check if the note is in the correct lane and within the hit window
+        if (noteX > targetX_min && noteX < targetX_max && distance < hitWindow) {
+            if (distance < minDistance) {
+                minDistance = distance;
+                closestNote = note;
+            }
+        }
+    });
+
+    // If a note was found, destroy it and provide feedback
+    if (closestNote) {
+        closestNote.destroy();
+        console.log(`Hit in lane ${laneIndex + 1}!`);
+
+        // Add visual feedback for the hit
+        const feedbackRect = scene.add.rectangle(targetX_min + laneWidth / 2, judgmentLineY, laneWidth, 50, 0xffffff, 0.5);
+        scene.tweens.add({
+            targets: feedbackRect,
+            alpha: 0,
+            duration: 200,
+            onComplete: () => {
+                feedbackRect.destroy();
+            }
+        });
+    }
 }
