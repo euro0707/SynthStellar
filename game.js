@@ -33,14 +33,44 @@ function preload() {
 
 // Create function: runs once after preload, sets up the game
 function create() {
-    // Example: this.add.image(400, 300, 'sky');
-    // We will add game objects and logic here later
     console.log("Game created!");
-    this.add.text(config.width / 2, config.height / 2, 'SynthStellar Beat Game\nReady!', {
-        fontSize: '32px',
-        fill: '#fff',
-        align: 'center'
-    }).setOrigin(0.5);
+
+    // --- Game Layout Constants ---
+    const gameWidth = this.sys.game.config.width;
+    const gameHeight = this.sys.game.config.height;
+    const numLanes = 4;
+    const laneWidth = 100;
+    const playfieldWidth = numLanes * laneWidth;
+    const playfieldStartX = (gameWidth - playfieldWidth) / 2;
+    const judgmentLineY = gameHeight - 100;
+
+    // --- Draw Playfield ---
+    const graphics = this.add.graphics();
+
+    // Draw lane separators
+    graphics.lineStyle(2, 0x555555); // 2px thick, gray lines
+    for (let i = 0; i <= numLanes; i++) {
+        const x = playfieldStartX + i * laneWidth;
+        graphics.beginPath();
+        graphics.moveTo(x, 0);
+        graphics.lineTo(x, gameHeight);
+        graphics.closePath();
+        graphics.strokePath();
+    }
+
+    // Draw judgment line
+    graphics.lineStyle(4, 0xff0000); // 4px thick, red line
+    graphics.beginPath();
+    graphics.moveTo(playfieldStartX, judgmentLineY);
+    graphics.lineTo(playfieldStartX + playfieldWidth, judgmentLineY);
+    graphics.closePath();
+    graphics.strokePath();
+
+    // Add a text label for the judgment line (optional)
+    this.add.text(playfieldStartX - 10, judgmentLineY, 'PERFECT', {
+        fontSize: '16px',
+        fill: '#ff0000'
+    }).setOrigin(1, 0.5);
 }
 
 // Update function: runs every frame, game loop
