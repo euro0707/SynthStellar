@@ -298,9 +298,15 @@ function displayJudgment(scene, text, color = '#ffffff') {
     });
 }
 
-function spawnNote(scene, playfieldStartX, laneWidth, numLanes) {
-    const lane = Phaser.Math.Between(0, numLanes - 1);
-    const x = playfieldStartX + (lane * laneWidth) + (laneWidth / 2);
+function spawnNote(scene, laneIndex) {
+    // 必要な定数をsceneから取得
+    const gameWidth = scene.sys.game.config.width;
+    const gameHeight = scene.sys.game.config.height;
+    const numLanes = 4;
+    const laneWidth = 100;
+    const playfieldStartX = (gameWidth - numLanes * laneWidth) / 2;
+
+    const x = playfieldStartX + (laneIndex * laneWidth) + (laneWidth / 2);
     const y = -50; // Start above the screen
 
     const note = scene.add.rectangle(x, y, laneWidth - 10, 30, 0x00ff00); // Green note
