@@ -37,6 +37,8 @@ let spawnTimer;
 let keys; // To hold keyboard input objects
 let score = 0;
 let scoreText;
+let combo = 0;
+let comboText;
 let judgmentLineY; // To be accessible in update()
 let gameState; // 'playing', 'ending', 'finished'
 let gameEndTimer;
@@ -132,6 +134,16 @@ function create() {
         align: 'right'
     }).setOrigin(1, 0);
 
+    // --- Combo Display ---
+    comboText = this.add.text(16, 16, 'Combo: 0', {
+        fontSize: '24px',
+        fill: '#00ffff',
+        align: 'left',
+        fontStyle: 'bold',
+        stroke: '#000',
+        strokeThickness: 3
+    }).setOrigin(0, 0);
+
     // --- Input Setup ---
     keys = this.input.keyboard.addKeys(laneKeys.join(','));
 
@@ -179,7 +191,8 @@ function update() {
             if (gameState === 'playing') {
                 console.log("Miss!");
                 displayJudgment(this, 'MISS', '#888888');
-                // Here you would typically reset the combo
+                combo = 0;
+                comboText.setText('Combo: 0');
             }
             note.destroy(); // Destroy the note regardless of game state
         }
@@ -225,7 +238,39 @@ function endGame() {
     }).setOrigin(0.5);
 }
 
+// 判定ごとのカウント用グローバル変数
+let judgmentCounts = {
+    PERFECT: 0,
+    GREAT: 0,
+    GOOD: 0,
+    MISS: 0
+};
+let judgmentCountText = null;
+
 function displayJudgment(scene, text, color = '#ffffff') {
+    // 判定ごとのカウントを更新
+    if (text in judgmentCounts) {
+        judgmentCounts[text]++;
+    }
+
+    // 上部に判定ごとの累計を表示
+    if (!judgmentCountText) {
+        judgmentCountText = scene.add.text(scene.sys.game.config.width / 2, scene.sys.game.config.height / 2 - 60, '', {
+            fontSize: '24px',
+            fill: '#fff',
+            align: 'center',
+            stroke: '#000',
+            strokeThickness: 3
+        }).setOrigin(0.5);
+    }
+    // 表示内容更新
+    const counts = judgmentCounts;
+    judgmentCountText.setText(
+        `PERFECT: ${counts.PERFECT}   GREAT: ${counts.GREAT}   GOOD: ${counts.GOOD}   MISS: ${counts.MISS}`
+    );
+    judgmentCountText.setAlpha(1);
+
+    // 判定文字の表示
     const judgmentText = scene.add.text(scene.sys.game.config.width / 2, scene.sys.game.config.height / 2, text, {
         fontSize: '48px',
         fill: color,
@@ -237,7 +282,7 @@ function displayJudgment(scene, text, color = '#ffffff') {
     scene.tweens.add({
         targets: judgmentText,
         alpha: { from: 1, to: 0 },
-        y: '-=50', // Move up slightly
+        y: '-=50',
         duration: 600,
         ease: 'Power1',
         onComplete: () => {
@@ -312,7 +357,9 @@ function hitNote(scene, laneIndex, judgmentLineY, playfieldStartX, laneWidth) {
         // Destroy the note and update score/UI
         closestNote.destroy();
         score += scoreValue;
+        combo += 1;
         scoreText.setText('Score: ' + score);
+        comboText.setText('Combo: ' + combo);
         console.log(`${judgment} in lane ${laneIndex + 1}!`);
         displayJudgment(scene, judgment, color);
     }
