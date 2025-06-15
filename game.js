@@ -195,6 +195,12 @@ function update() {
             // Only show 'MISS' judgment and reset combo during active play
             if (gameState === 'playing') {
                 console.log("Miss!");
+                // MISS時に判定累計をリセット
+                for (let key in judgmentCounts) {
+                    if (judgmentCounts.hasOwnProperty(key)) {
+                        judgmentCounts[key] = 0;
+                    }
+                }
                 displayJudgment(this, 'MISS', '#888888');
                 combo = 0;
             }
