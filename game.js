@@ -129,16 +129,21 @@ function create() {
     notesGroup = this.physics.add.group();
 
     // Timer to spawn notes periodically
-    spawnTimer = this.time.addEvent({
-        delay: 1000, // Spawn a note every 1000ms (1 second)
-        callback: () => {
-            if (gameState === 'playing') { // Only spawn notes if the game is active
-                spawnNote(this, playfieldStartX, laneWidth, numLanes);
-            }
-        },
-        callbackScope: this,
-        loop: true
-    });
+    // ノーツ生成間隔を毎回ランダムにする
+    const scheduleRandomNote = (scene) => {
+        const delay = Phaser.Math.Between(400, 1200); // 400ms〜1200ms
+        spawnTimer = scene.time.addEvent({
+            delay: delay,
+            callback: () => {
+                const laneIndex = Phaser.Math.Between(0, laneKeys.length - 1);
+                spawnNote(scene, laneIndex);
+                scheduleRandomNote(scene); // 再帰的に次のノーツ生成を予約
+            },
+            callbackScope: scene,
+            loop: false
+        });
+    };
+    scheduleRandomNote(this);
 
     // --- Score Display ---
     scoreText = this.add.text(gameWidth - 16, 16, 'Score: 0', {
