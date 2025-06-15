@@ -52,12 +52,6 @@ const judgmentWindows = {
 const laneKeys = ['D', 'F', 'J', 'K']; // Define keys for lanes
 
 function create() {
-    // 判定ごとの累計回数をリセット
-    for (let key in judgmentCounts) {
-        if (judgmentCounts.hasOwnProperty(key)) {
-            judgmentCounts[key] = 0;
-        }
-    }
     console.log("Game created!");
     this.input.keyboard.removeAllListeners(); // Clean up listeners from previous game
 
