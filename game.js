@@ -183,12 +183,6 @@ function update() {
                 console.log("Miss!");
                 displayJudgment(this, 'MISS', '#888888');
                 combo = 0;
-                // 判定累計もリセット
-                for (let key in judgmentCounts) {
-                    if (judgmentCounts.hasOwnProperty(key)) {
-                        judgmentCounts[key] = 0;
-                    }
-                }
             }
             note.destroy(); // Destroy the note regardless of game state
         }
