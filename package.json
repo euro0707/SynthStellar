@@ -1,0 +1,15 @@
+{
+  "name": "url-summarizer",
+  "version": "1.0.0",
+  "description": "CLI tool to summarize a given URL into one line using Google Gemini API",
+  "type": "module",
+  "main": "summarize-url.js",
+  "scripts": {
+    "summarize": "node summarize-url.js"
+  },
+  "dependencies": {
+    "@google/generative-ai": "^0.5.0",
+    "cheerio": "^1.0.0-rc.12",
+    "node-fetch": "^3.3.2"
+  }
+}

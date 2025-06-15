@@ -94,6 +94,22 @@ function create() {
         fill: '#ff0000'
     }).setOrigin(1, 0.5);
 
+    // --- Show Lane Keys ---
+    // 各レーンの下部中央にキー名を表示
+    for (let i = 0; i < numLanes; i++) {
+        const key = laneKeys[i];
+        const x = playfieldStartX + i * laneWidth + laneWidth / 2;
+        const y = gameHeight - 40;
+        this.add.text(x, y, key, {
+            fontSize: '32px',
+            fill: '#ffffff',
+            fontStyle: 'bold',
+            align: 'center',
+            stroke: '#000',
+            strokeThickness: 4
+        }).setOrigin(0.5, 0.5);
+    }
+
     // --- Notes Setup ---
     notesGroup = this.physics.add.group();
 
