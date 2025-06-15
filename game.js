@@ -37,8 +37,7 @@ let spawnTimer;
 let keys; // To hold keyboard input objects
 let score = 0;
 let scoreText;
-let combo = 0;
-let comboText;
+let combo = 0; // comboText 削除
 let judgmentLineY; // To be accessible in update()
 let gameState; // 'playing', 'ending', 'finished'
 let gameEndTimer;
@@ -140,15 +139,7 @@ function create() {
         align: 'right'
     }).setOrigin(1, 0);
 
-    // --- Combo Display ---
-    comboText = this.add.text(16, 16, 'Combo: 0', {
-        fontSize: '24px',
-        fill: '#00ffff',
-        align: 'left',
-        fontStyle: 'bold',
-        stroke: '#000',
-        strokeThickness: 3
-    }).setOrigin(0, 0);
+
 
     // --- Input Setup ---
     keys = this.input.keyboard.addKeys(laneKeys.join(','));
@@ -198,7 +189,12 @@ function update() {
                 console.log("Miss!");
                 displayJudgment(this, 'MISS', '#888888');
                 combo = 0;
-                comboText.setText('Combo: 0');
+                // 判定累計もリセット
+                for (let key in judgmentCounts) {
+                    if (judgmentCounts.hasOwnProperty(key)) {
+                        judgmentCounts[key] = 0;
+                    }
+                }
             }
             note.destroy(); // Destroy the note regardless of game state
         }
