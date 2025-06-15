@@ -318,10 +318,10 @@ function hitNote(scene, laneIndex, judgmentLineY, playfieldStartX, laneWidth) {
         // Destroy the note and update score/UI
         closestNote.destroy();
         score += scoreValue;
-        combo += 1;
         scoreText.setText('Score: ' + score);
-        comboText.setText('Combo: ' + combo);
         console.log(`${judgment} in lane ${laneIndex + 1}!`);
-        displayJudgment(scene, judgment, color);
+        if (judgment) {
+            displayJudgment(scene, judgment, color);
+        }
     }
 }
