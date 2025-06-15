@@ -51,7 +51,21 @@ const judgmentWindows = {
 };
 const laneKeys = ['D', 'F', 'J', 'K']; // Define keys for lanes
 
+// 判定ごとのカウント用グローバル変数
+let judgmentCounts = {
+    PERFECT: 0,
+    GREAT: 0,
+    GOOD: 0,
+    MISS: 0
+};
+
 function create() {
+    // 判定ごとの累計回数をリセット
+    for (let key in judgmentCounts) {
+        if (judgmentCounts.hasOwnProperty(key)) {
+            judgmentCounts[key] = 0;
+        }
+    }
     console.log("Game created!");
     this.input.keyboard.removeAllListeners(); // Clean up listeners from previous game
 
@@ -229,6 +243,10 @@ function endGame() {
 }
 
 function displayJudgment(scene, text, color = '#ffffff') {
+    // 判定ごとのカウントを更新
+    if (text in judgmentCounts) {
+        judgmentCounts[text]++;
+    }
     // 判定文字の表示（中央）
     const centerX = scene.sys.game.config.width / 2;
     const centerY = scene.sys.game.config.height / 2;
@@ -240,14 +258,31 @@ function displayJudgment(scene, text, color = '#ffffff') {
         strokeThickness: 4
     }).setOrigin(0.5);
 
+    // 判定数値の表示（判定の右横）
+    let countText = null;
+    if (text in judgmentCounts) {
+        const count = judgmentCounts[text];
+        countText = scene.add.text(centerX + 120, centerY, `${count}`, {
+            fontSize: '40px',
+            fill: color,
+            align: 'left',
+            fontStyle: 'bold',
+            stroke: '#000000',
+            strokeThickness: 4
+        }).setOrigin(0, 0.5);
+    }
+
+    // フェードアウトアニメーション
+    const tweenTargets = countText ? [judgmentText, countText] : [judgmentText];
     scene.tweens.add({
-        targets: judgmentText,
+        targets: tweenTargets,
         alpha: { from: 1, to: 0 },
         y: '-=50',
         duration: 600,
         ease: 'Power1',
         onComplete: () => {
             judgmentText.destroy();
+            if (countText) countText.destroy();
         }
     });
 }
